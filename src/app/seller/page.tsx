@@ -1,8 +1,13 @@
-import { Button } from "@mui/material";
-import AbcIcon from '@mui/icons-material/Abc';
+import { Button, TextField } from "@mui/material";
+import Link from "next/link";
+import LoginForm from "./components/LoginForm";
 
 const page = () => {
-  return <div><Button variant="contained">Hello world<AbcIcon /></Button></div>;
+  return (
+    <div className="flex flex-col flex-1 p-6 items-center justify-center">
+      <LoginForm />
+    </div>
+  );
 };
 
 export default page;

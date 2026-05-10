@@ -11,7 +11,7 @@ export default function SellerLayout({
   children: React.ReactNode;
 }>) {
   return (
-    <div className="min-h-full flex flex-col">
+    <div className="flex flex-col flex-1">
       {children}
     </div>
   );
