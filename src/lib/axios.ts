@@ -4,7 +4,7 @@ import type { AxiosRequestConfig } from "axios";
 export type ApiOptions<T = any> = {
   route?: string;
   params?: Record<string, any>;
-  data?: T;
+  payload?: T;
   config?: AxiosRequestConfig;
 };
 

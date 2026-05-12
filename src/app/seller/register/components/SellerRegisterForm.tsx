@@ -25,8 +25,17 @@ const SellerRegisterForm = () => {
     setCurrentStep(2);
   }
 
+  const register = async (event: React.SubmitEvent<HTMLFormElement>) => {
+    event.preventDefault();
+
+    const result = await accountApis.post({
+      route: "register",
+      payload: { data: (({ cPassword, ...rest }) => rest)(sellerRegisterForm.value) },
+    });
+  }
+
   return (
-    <form className="bg-white flex flex-col gap-4 w-96 p-4 rounded-md shadow-sm">
+    <form className="bg-white flex flex-col gap-4 w-96 p-4 rounded-md shadow-sm" onSubmit={(e) => register(e)}>
       <div className="flex flex-col gap-2">
         <div className="font-bold text-2xl text-center">
           REGISTER AS SELLER
@@ -128,11 +137,12 @@ const SellerRegisterForm = () => {
               }}
             />
             <FormControl>
-              <InputLabel id="gender-label">Gender</InputLabel>
+              <InputLabel id="gender-label">Gender *</InputLabel>
               <Select
                 labelId="gender-label"
                 value={sellerRegisterForm.value.gender}
                 label="Gender"
+                required
                 onChange={(e) => {
                   updateSellerRegisterForm("gender", e.target.value);
                 }}
@@ -145,6 +155,7 @@ const SellerRegisterForm = () => {
               label="Birth Date"
               type="date"
               value={sellerRegisterForm.value.birthDate}
+              required
               onChange={(e) => {
                 updateSellerRegisterForm("birthDate", e.target.value);
               }}
@@ -157,6 +168,7 @@ const SellerRegisterForm = () => {
           </div>
           <div className="flex flex-row gap-2">
             <Button
+              type="submit"
               size="large"
               className="flex-1"
               variant="contained"

@@ -9,14 +9,14 @@ const accountApis = {
   getById: (id: string, config?: any) =>
     api.get(`${accountBaseRoute}/${id}`, config),
 
-  post: ({ route, data, config }: ApiOptions = {}) =>
-    api.post(buildRoute(accountBaseRoute, route), data, config),
+  post: ({ route, payload, config }: ApiOptions = {}) =>
+    api.post(buildRoute(accountBaseRoute, route), payload, config),
 
-  put: ({ route, data, config }: ApiOptions = {}) =>
-    api.put(buildRoute(accountBaseRoute, route), data, config),
+  put: ({ route, payload, config }: ApiOptions = {}) =>
+    api.put(buildRoute(accountBaseRoute, route), payload, config),
 
-  patch: ({ route, data, config }: ApiOptions = {}) =>
-    api.patch(buildRoute(accountBaseRoute, route), data, config),
+  patch: ({ route, payload, config }: ApiOptions = {}) =>
+    api.patch(buildRoute(accountBaseRoute, route), payload, config),
 
   delete: ({ route, config }: ApiOptions = {}) =>
     api.delete(buildRoute(accountBaseRoute, route), config),
