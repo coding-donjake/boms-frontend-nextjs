@@ -5,11 +5,14 @@ import { sellerRegisterForm, sellerRegisterFormAlert, updateSellerRegisterForm, 
 import { useSignals } from "@preact/signals-react/runtime";
 import { useState } from "react";
 import accountApis from "@/lib/apis/account-api";
+import { useRouter } from "next/navigation";
+import { updateSellerLoginFormAlert } from "../../store";
 
 const SellerRegisterForm = () => {
   useSignals();
 
   const [currentStep, setCurrentStep] = useState(1);
+  const router = useRouter();
 
   const validateStep1 = async () => {
     const result = await accountApis.get({ route: `check-username-availability/${sellerRegisterForm.value.username}` });
@@ -28,14 +31,49 @@ const SellerRegisterForm = () => {
   const register = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    const result = await accountApis.post({
-      route: "register",
-      payload: { data: (({ cPassword, ...rest }) => rest)(sellerRegisterForm.value) },
-    });
+    if (sellerRegisterForm.value.password.length < 6) {
+      updateSellerRegisterFormAlert("text", "Password must be atleast 6 characters.");
+      updateSellerRegisterFormAlert("severity", "error");
+      updateSellerRegisterFormAlert("isOpen", true);
+      return;
+    }
+
+    if (sellerRegisterForm.value.password != sellerRegisterForm.value.cPassword) {
+      updateSellerRegisterFormAlert("text", "Password didn't match.");
+      updateSellerRegisterFormAlert("severity", "error");
+      updateSellerRegisterFormAlert("isOpen", true);
+      return;
+    }
+
+    try {
+      const result = await accountApis.post({
+        route: "register",
+        payload: { data: (({ cPassword, ...rest }) => rest)(sellerRegisterForm.value) },
+      });
+
+      updateSellerLoginFormAlert("text", "Account registration success.");
+      updateSellerLoginFormAlert("severity", "success");
+      updateSellerLoginFormAlert("isOpen", true);
+      router.push("/seller");
+    } catch (error: any) {
+      if (error.response?.status === 500) {
+        updateSellerRegisterFormAlert("text", "Internal server error.");
+        updateSellerRegisterFormAlert("severity", "error");
+        updateSellerRegisterFormAlert("isOpen", true);
+        return;
+      }
+
+      if (error.response?.status === 400) {
+        updateSellerRegisterFormAlert("text", "Invalid details for registration.");
+        updateSellerRegisterFormAlert("severity", "error");
+        updateSellerRegisterFormAlert("isOpen", true);
+        return;
+      }
+    }
   }
 
   return (
-    <form className="bg-white flex flex-col gap-4 w-96 p-4 rounded-md shadow-sm" onSubmit={(e) => register(e)}>
+    <form className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm" onSubmit={(e) => register(e)}>
       <div className="flex flex-col gap-2">
         <div className="font-bold text-2xl text-center">
           REGISTER AS SELLER
@@ -61,15 +99,25 @@ const SellerRegisterForm = () => {
               }}
             />
           </div>
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row-reverse gap-2">
             <Button
-              size="large"
               className="flex-1"
+              size="large"
               variant="contained"
               color="success"
               onClick={() => validateStep1()}
             >
               Next Step
+            </Button>
+            <Button
+              className="flex-1"
+              type="submit"
+              size="large"
+              variant="contained"
+              color="info"
+              onClick={() => router.push("/seller")}
+            >
+              Log-In Instead
             </Button>
           </div>
         </>
@@ -166,15 +214,25 @@ const SellerRegisterForm = () => {
               }}
             />
           </div>
-          <div className="flex flex-row gap-2">
+          <div className="flex flex-row-reverse gap-2">
             <Button
+              className="flex-1"
               type="submit"
               size="large"
-              className="flex-1"
               variant="contained"
               color="success"
             >
               Create Account
+            </Button>
+            <Button
+              className="flex-1"
+              type="submit"
+              size="large"
+              variant="contained"
+              color="info"
+              onClick={() => router.push("/seller")}
+            >
+              Log-In Instead
             </Button>
           </div>
         </>
