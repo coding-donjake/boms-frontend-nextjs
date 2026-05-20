@@ -23,7 +23,7 @@ const SellerLoginForm = () => {
       });
 
       localStorage.setItem("token", result.data.token);
-      router.push("dashboard");
+      router.push("/seller/dashboard");
     } catch (error: any) {
       if (error.response?.status === 500) {
         updateState(sellerFormAlert, { text: "Internal server error." });
@@ -43,7 +43,7 @@ const SellerLoginForm = () => {
   }
 
   return (
-    <form className="bg-white flex flex-col gap-4 w-96 p-4 rounded-md shadow-sm" onSubmit={(e) => login(e)}>
+    <form className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm" onSubmit={(e) => login(e)}>
       <div className="flex flex-col gap-2">
         <div className="font-bold text-2xl text-center">SELLER PORTAL</div>
         <div className={sellerFormAlert.value.isOpen ? "block" : "hidden"}>

@@ -1,6 +1,4 @@
-import { Button, TextField } from "@mui/material";
-import Link from "next/link";
-import SellerLoginForm from "../../components/seller/widgets/SellerLoginForm";
+import SellerLoginForm from "@/components/seller/widgets/SellerLoginForm";
 
 const page = () => {
   return (
