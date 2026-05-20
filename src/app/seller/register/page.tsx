@@ -1,4 +1,4 @@
-import SellerRegisterForm from "./components/SellerRegisterForm";
+import SellerRegisterForm from "../../../components/seller/widgets/SellerRegisterForm";
 
 const page = () => {
   return (

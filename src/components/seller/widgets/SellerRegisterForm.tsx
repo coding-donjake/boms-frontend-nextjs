@@ -1,12 +1,12 @@
 "use client";
 
 import { TextField, Button, Alert, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
-import { sellerRegisterForm, sellerRegisterFormAlert, updateSellerRegisterForm, updateSellerRegisterFormAlert } from "../store";
 import { useSignals } from "@preact/signals-react/runtime";
 import { useState } from "react";
-import accountApis from "@/lib/apis/account-api";
+import accountApis from "@/components/seller/api";
 import { useRouter } from "next/navigation";
-import { updateSellerLoginFormAlert } from "../../store";
+import { updateState } from "@/lib/utis";
+import { sellerFormAlert, sellerRegisterForm } from "../store";
 
 const SellerRegisterForm = () => {
   useSignals();
@@ -15,62 +15,62 @@ const SellerRegisterForm = () => {
   const router = useRouter();
 
   const validateStep1 = async () => {
-    const result = await accountApis.get({ route: `check-username-availability/${sellerRegisterForm.value.username}` });
+    const result = await accountApis.get({ route: `check-username-availability/${sellerRegisterForm.value.data.username}` });
 
     if (!result.data.isUsernameAvailable) {
-      updateSellerRegisterFormAlert("text", "Username not available.");
-      updateSellerRegisterFormAlert("severity", "error");
-      updateSellerRegisterFormAlert("isOpen", true);
+      updateState(sellerFormAlert, { text: "Username not available." });
+      updateState(sellerFormAlert, { severity: "error" });
+      updateState(sellerFormAlert, { isOpen: true });
       return;
     }
 
-    updateSellerRegisterFormAlert("isOpen", false);
+    updateState(sellerFormAlert, { isOpen: false });
     setCurrentStep(2);
   }
 
   const register = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
-    if (sellerRegisterForm.value.password.length < 6) {
-      updateSellerRegisterFormAlert("text", "Password must be atleast 6 characters.");
-      updateSellerRegisterFormAlert("severity", "error");
-      updateSellerRegisterFormAlert("isOpen", true);
+    if (sellerRegisterForm.value.data.password.length < 6) {
+      updateState(sellerFormAlert, { text: "Password must be atleast 6 characters." });
+      updateState(sellerFormAlert, { severity: "error" });
+      updateState(sellerFormAlert, { isOpen: true });
       return;
     }
 
-    if (sellerRegisterForm.value.password != sellerRegisterForm.value.cPassword) {
-      updateSellerRegisterFormAlert("text", "Password didn't match.");
-      updateSellerRegisterFormAlert("severity", "error");
-      updateSellerRegisterFormAlert("isOpen", true);
+    if (sellerRegisterForm.value.data.password != sellerRegisterForm.value.data.cPassword) {
+      updateState(sellerFormAlert, { text: "Password didn't match." });
+      updateState(sellerFormAlert, { severity: "error" });
+      updateState(sellerFormAlert, { isOpen: true });
       return;
     }
 
     try {
       const result = await accountApis.post({
         route: "register",
-        payload: { data: (({ cPassword, ...rest }) => rest)(sellerRegisterForm.value) },
+        payload: { data: (({ cPassword, ...rest }) => rest)(sellerRegisterForm.value.data) },
       });
 
-      updateSellerLoginFormAlert("text", "Account registration success.");
-      updateSellerLoginFormAlert("severity", "success");
-      updateSellerLoginFormAlert("isOpen", true);
+      updateState(sellerFormAlert, { text: "Account registration success." });
+      updateState(sellerFormAlert, { severity: "success" });
+      updateState(sellerFormAlert, { isOpen: true });
       router.push("/seller");
     } catch (error: any) {
       if (error.response?.status === 500) {
-        updateSellerRegisterFormAlert("text", "Internal server error.");
-        updateSellerRegisterFormAlert("severity", "error");
-        updateSellerRegisterFormAlert("isOpen", true);
+        updateState(sellerFormAlert, { text: "Internal server error." });
+        updateState(sellerFormAlert, { severity: "error" });
+        updateState(sellerFormAlert, { isOpen: true });
         return;
       }
 
       if (error.response?.status === 400) {
-        updateSellerRegisterFormAlert("text", "Invalid details for registration.");
-        updateSellerRegisterFormAlert("severity", "error");
-        updateSellerRegisterFormAlert("isOpen", true);
+        updateState(sellerFormAlert, { text: "Invalid details for registration." });
+        updateState(sellerFormAlert, { severity: "error" });
+        updateState(sellerFormAlert, { isOpen: true });
         return;
       }
     }
-  }
+  };
 
   return (
     <form className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm" onSubmit={(e) => register(e)}>
@@ -78,12 +78,12 @@ const SellerRegisterForm = () => {
         <div className="font-bold text-2xl text-center">
           REGISTER AS SELLER
         </div>
-        <div className={sellerRegisterFormAlert.value.isOpen ? "block" : "hidden"}>
+        <div className={sellerFormAlert.value.isOpen ? "block" : "hidden"}>
           <Alert
             variant="outlined"
-            severity={sellerRegisterFormAlert.value.severity}
+            severity={sellerFormAlert.value.severity}
             >
-            {sellerRegisterFormAlert.value.text}
+            {sellerFormAlert.value.text}
           </Alert>
         </div>
       </div>
@@ -92,10 +92,12 @@ const SellerRegisterForm = () => {
           <div className="flex flex-col gap-2">
             <TextField
               label="Create username"
-              value={sellerRegisterForm.value.username}
+              value={sellerRegisterForm.value.data.username}
               required
               onChange={(e) => {
-                updateSellerRegisterForm("username", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, username: e.target.value },
+                });
               }}
             />
           </div>
@@ -126,7 +128,7 @@ const SellerRegisterForm = () => {
           <div className="flex flex-col gap-2">
             <TextField
               label="Username"
-              value={sellerRegisterForm.value.username}
+              value={sellerRegisterForm.value.data.username}
               slotProps={{
                 input: {
                   readOnly: true,
@@ -136,19 +138,23 @@ const SellerRegisterForm = () => {
             <TextField
               label="Create password"
               type="password"
-              value={sellerRegisterForm.value.password}
+              value={sellerRegisterForm.value.data.password}
               required
               onChange={(e) => {
-                updateSellerRegisterForm("password", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, password: e.target.value },
+                });
               }}
             />
             <TextField
               label="Confirm password"
               type="password"
-              value={sellerRegisterForm.value.cPassword}
+              value={sellerRegisterForm.value.data.cPassword}
               required
               onChange={(e) => {
-                updateSellerRegisterForm("cPassword", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, cPassword: e.target.value },
+                });
               }}
             />
           </div>
@@ -156,43 +162,53 @@ const SellerRegisterForm = () => {
           <div className="flex flex-col gap-2">
             <TextField
               label="Last Name"
-              value={sellerRegisterForm.value.lastName}
+              value={sellerRegisterForm.value.data.lastName}
               required
               onChange={(e) => {
-                updateSellerRegisterForm("lastName", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, lastName: e.target.value },
+                });
               }}
             />
             <TextField
               label="First Name"
-              value={sellerRegisterForm.value.firstName}
+              value={sellerRegisterForm.value.data.firstName}
               required
               onChange={(e) => {
-                updateSellerRegisterForm("firstName", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, firstName: e.target.value },
+                });
               }}
             />
             <TextField
               label="Middle Name (optional)"
-              value={sellerRegisterForm.value.middleName}
+              value={sellerRegisterForm.value.data.middleName}
               onChange={(e) => {
-                updateSellerRegisterForm("middleName", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, middleName: e.target.value },
+                });
               }}
             />
             <TextField
               label="Suffix (optional)"
-              value={sellerRegisterForm.value.suffix}
+              value={sellerRegisterForm.value.data.suffix}
               onChange={(e) => {
-                updateSellerRegisterForm("suffix", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, suffix: e.target.value },
+                });
               }}
             />
             <FormControl>
               <InputLabel id="gender-label">Gender *</InputLabel>
               <Select
                 labelId="gender-label"
-                value={sellerRegisterForm.value.gender}
+                value={sellerRegisterForm.value.data.gender}
                 label="Gender"
                 required
                 onChange={(e) => {
-                  updateSellerRegisterForm("gender", e.target.value);
+                  updateState(sellerRegisterForm, {
+                    data: { ...sellerRegisterForm.value.data, gender: e.target.value },
+                  });
                 }}
                 >
                 <MenuItem value={"MALE"}>Male</MenuItem>
@@ -202,10 +218,12 @@ const SellerRegisterForm = () => {
             <TextField
               label="Birth Date"
               type="date"
-              value={sellerRegisterForm.value.birthDate}
+              value={sellerRegisterForm.value.data.birthDate}
               required
               onChange={(e) => {
-                updateSellerRegisterForm("birthDate", e.target.value);
+                updateState(sellerRegisterForm, {
+                  data: { ...sellerRegisterForm.value.data, birthDate: e.target.value },
+                });
               }}
               slotProps={{
                 inputLabel: {
