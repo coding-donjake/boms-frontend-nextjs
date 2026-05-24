@@ -18,7 +18,7 @@ const SellerLoginForm = () => {
 
     updateState(sellerLoginForm, {
       formState: { ...sellerLoginForm.value.formState, loading: true }
-    })
+    });
 
     try {
       const result = await accountApis.post({

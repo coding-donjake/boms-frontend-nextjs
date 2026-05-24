@@ -76,8 +76,6 @@ export type SellerStoreCrudDataType = {
   dateCreated: string | null;
   dateRemoved: string | null;
   organizationId: string | null;
-  profileImageFile: File | null;
-  bannerImageFile: File | null;
 }
 
 export type SellerStoreCrudType = {
@@ -98,8 +96,6 @@ export const defaultSellerStoreCrud: SellerStoreCrudType = {
     dateCreated: null,
     dateRemoved: null,
     organizationId: null,
-    profileImageFile: null,
-    bannerImageFile: null,
   }
 };
 

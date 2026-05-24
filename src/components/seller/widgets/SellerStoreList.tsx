@@ -1,20 +1,64 @@
 import { Add } from "@mui/icons-material";
+import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import { Button, Modal, TextField } from "@mui/material";
-import { useEffect, useState } from "react";
+import { useState } from "react";
 import { resetSellerCrud, sellerStoreCrud } from "../store";
-import { updateState } from "@/lib/utils";
+import { updateState, uploadFiles } from "@/lib/utils";
 import { useSignals } from "@preact/signals-react/runtime";
+import { styled } from "@mui/material/styles";
 
 const SellerStoreList = () => {
   useSignals();
 
   const [modalOpen, setModalOpen] = useState<boolean>(false);
 
+  const uploadImage = async (files: FileList | null, attribute: string) => {
+    try {
+      if (!files) return;
+
+      const uploaded = await uploadFiles(files, sellerStoreCrud);
+
+      updateState(sellerStoreCrud, {
+        data: {
+          ...sellerStoreCrud.value.data,
+          [attribute]: uploaded[0].url,
+        }
+      });
+
+      console.log("reached");
+    } catch (error: any) {
+      const data = error.response.data;
+
+      updateState(sellerStoreCrud, {
+        formState: {
+          ...sellerStoreCrud.value.formState,
+          formAlert: {
+            variant: "error",
+            text: data.message,
+            isOpen: true,
+          }
+        }
+      });
+    }
+  }
+
   const createStore = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
 
   }
+
+  const VisuallyHiddenInput = styled('input')({
+    clip: 'rect(0 0 0 0)',
+    clipPath: 'inset(50%)',
+    height: 1,
+    overflow: 'hidden',
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    whiteSpace: 'nowrap',
+    width: 1,
+  });
 
   return (
     <div className="bg-white p-4 rounded-md shadow-sm">
@@ -36,9 +80,70 @@ const SellerStoreList = () => {
           setModalOpen(false);
         }}
       >
-        <div className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm">
+        <form
+          className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm"
+          onSubmit={(e) => createStore(e)}
+        >
           <div className="font-medium text-lg text-center">Add New Store</div>
-          <form className="flex flex-col gap-2" onSubmit={(e) => createStore(e)}>
+          <div className="relative w-full pb-16">
+            <div className="h-48 w-full overflow-hidden rounded-md">
+              <img
+                src={
+                  sellerStoreCrud.value.data.bannerImage
+                  ? `${process.env.NEXT_PUBLIC_API_URL}${sellerStoreCrud.value.data.bannerImage}`
+                  : "https://placehold.co/1200x400?text=Banner&font=roboto&bg=E5E7EB&fc=6B7280"
+                }
+                alt="Banner"
+                className="h-full w-full object-cover"
+              />
+            </div>
+            <div className="absolute left-1/2 top-48 -translate-x-1/2 -translate-y-1/2">
+              <div className="h-32 w-32 rounded-full border-4 border-white bg-gray-500 overflow-hidden shadow-md">
+                <img
+                  src={
+                    sellerStoreCrud.value.data.profileImage
+                    ? `${process.env.NEXT_PUBLIC_API_URL}${sellerStoreCrud.value.data.profileImage}`
+                    : "https://placehold.co/256x256?text=profile&font=roboto&bg=E5E7EB&fc=6B7280"
+                  }
+                  alt="Profile"
+                  className="h-full w-full object-cover"
+                />
+              </div>
+            </div>
+          </div>
+          <div className="flex flex-row gap-2">
+            <Button
+              className="flex-1"
+              component="label"
+              role={undefined}
+              size="large"
+              variant="contained"
+              tabIndex={-1}
+              startIcon={<CloudUploadIcon />}
+            >
+              Upload Profile
+              <VisuallyHiddenInput
+                type="file"
+                onChange={(e) => uploadImage(e.target.files, "profileImage")}
+              />
+            </Button>
+            <Button
+              className="flex-1"
+              component="label"
+              role={undefined}
+              size="large"
+              variant="contained"
+              tabIndex={-1}
+              startIcon={<CloudUploadIcon />}
+            >
+              Upload Banner
+              <VisuallyHiddenInput
+                type="file"
+                onChange={(e) => uploadImage(e.target.files, "bannerImage")}
+              />
+            </Button>
+          </div>
+          <div className="flex flex-col gap-2">
             <TextField
               label="Name"
               value={sellerStoreCrud.value.data.name}
@@ -72,8 +177,8 @@ const SellerStoreList = () => {
                 });
               }}
             />
-          </form>
-        </div>
+          </div>
+        </form>
       </Modal>
     </div>
   );
