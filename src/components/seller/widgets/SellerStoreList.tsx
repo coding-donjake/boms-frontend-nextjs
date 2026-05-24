@@ -1,11 +1,13 @@
 import { Add } from "@mui/icons-material";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
+import CancelIcon from '@mui/icons-material/Cancel';
 import { Button, Modal, TextField } from "@mui/material";
 import { useState } from "react";
 import { resetSellerCrud, sellerStoreCrud } from "../store";
 import { updateState, uploadFiles } from "@/lib/utils";
 import { useSignals } from "@preact/signals-react/runtime";
 import { styled } from "@mui/material/styles";
+import businessSiteApis from "../business-site-api";
 
 const SellerStoreList = () => {
   useSignals();
@@ -45,7 +47,33 @@ const SellerStoreList = () => {
   const createStore = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    updateState(sellerStoreCrud, {
+      formState: { ...sellerStoreCrud.value.formState, loading: true }
+    });
 
+    try {
+      const result = await businessSiteApis.post({
+        route: "",
+        payload: { data: sellerStoreCrud.value.data },
+        config: { withCredentials: true },
+      });
+
+      // resetSellerCrud();
+      console.log(result);
+    } catch (error: any) {
+      const data = error.response.data;
+
+      updateState(sellerStoreCrud, {
+        formState: {
+          ...sellerStoreCrud.value.formState,
+          formAlert: {
+            variant: "error",
+            text: data.message,
+            isOpen: true,
+          }
+        }
+      });
+    }
   }
 
   const VisuallyHiddenInput = styled('input')({
@@ -65,7 +93,15 @@ const SellerStoreList = () => {
       <div className="flex flex-row ga-6 mb-2">
         <div className="font-medium text-2xl">Store List</div>
         <div className="ml-auto">
-          <Button size="small" variant="contained" color="info" onClick={() => setModalOpen(true)}>
+          <Button
+            size="small"
+            variant="contained"
+            color="info"
+            onClick={() => {
+              setModalOpen(true);
+              resetSellerCrud();
+            }}
+          >
             <Add />
             Add New
           </Button>
@@ -75,16 +111,20 @@ const SellerStoreList = () => {
       <Modal
         className="flex flex-col justify-center items-center"
         open={modalOpen}
-        onClose={() => {
-          resetSellerCrud();
-          setModalOpen(false);
-        }}
       >
         <form
           className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm"
           onSubmit={(e) => createStore(e)}
         >
-          <div className="font-medium text-lg text-center">Add New Store</div>
+
+          <div className="relative">
+            <div className="font-medium text-lg text-center">Add New Store</div>
+            <div className="absolute top-0 right-0">
+              <div className="flex flex-row gap-2">
+                <CancelIcon className="cursor-pointer" color="error" onClick={() => setModalOpen(false)} />
+              </div>
+            </div>
+          </div>
           <div className="relative w-full pb-16">
             <div className="h-48 w-full overflow-hidden rounded-md">
               <img
@@ -177,6 +217,17 @@ const SellerStoreList = () => {
                 });
               }}
             />
+          </div>
+          <div className="flex flex-row justify-center">
+            <Button
+              type="submit"
+              size="large"
+              variant="contained"
+              color="success"
+              disabled={sellerStoreCrud.value.formState.loading}
+            >
+              Add Store
+            </Button>
           </div>
         </form>
       </Modal>

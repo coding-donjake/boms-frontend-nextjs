@@ -3,7 +3,7 @@
 import { TextField, Button, Alert, CircularProgress } from "@mui/material";
 import { useRouter } from "next/navigation";
 import { useSignals } from "@preact/signals-react/runtime";
-import accountApis from "@/components/seller/api";
+import accountApis from "@/components/seller/account-api";
 import { updateState } from "@/lib/utils";
 import { resetSellerLoginForm, sellerLoginForm } from "../store";
 import { useEffect } from "react";
