@@ -1,12 +1,12 @@
 "use client";
 
-import { TextField, Button, Alert, Select, MenuItem, FormControl, InputLabel } from "@mui/material";
+import { TextField, Button, Alert, Select, MenuItem, FormControl, InputLabel, CircularProgress } from "@mui/material";
 import { useSignals } from "@preact/signals-react/runtime";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import accountApis from "@/components/seller/api";
 import { useRouter } from "next/navigation";
-import { updateState } from "@/lib/utis";
-import { sellerFormAlert, sellerRegisterForm } from "../store";
+import { updateState } from "@/lib/utils";
+import { resetSellerRegisterForm, sellerRegisterForm } from "../store";
 
 const SellerRegisterForm = () => {
   useSignals();
@@ -15,33 +15,96 @@ const SellerRegisterForm = () => {
   const router = useRouter();
 
   const validateStep1 = async () => {
-    const result = await accountApis.get({ route: `check-username-availability/${sellerRegisterForm.value.data.username}` });
+    try {
+      if (sellerRegisterForm.value.data.username.length < 6) {
+        updateState(sellerRegisterForm, {
+          formState: {
+            ...sellerRegisterForm.value.formState,
+            formAlert: {
+              variant: "error",
+              text: "Username must be atleast 6 characters.",
+              isOpen: true,
+            }
+          }
+        });
 
-    if (!result.data.isUsernameAvailable) {
-      updateState(sellerFormAlert, { text: "Username not available." });
-      updateState(sellerFormAlert, { severity: "error" });
-      updateState(sellerFormAlert, { isOpen: true });
-      return;
+        return;
+      }
+
+      const result = await accountApis.get({ route: `check-username-availability/${sellerRegisterForm.value.data.username}` });
+
+      if (!result.data.isUsernameAvailable) {
+        updateState(sellerRegisterForm, {
+          formState: {
+            ...sellerRegisterForm.value.formState,
+            formAlert: {
+              variant: "error",
+              text: "Username not available.",
+              isOpen: true,
+            }
+          }
+        });
+
+        return;
+      }
+
+      updateState(sellerRegisterForm, {
+        formState: {
+          ...sellerRegisterForm.value.formState,
+          formAlert: {
+            variant: "info",
+            text: "",
+            isOpen: false,
+          }
+        }
+      });
+      setCurrentStep(2);
+    } catch (error: any) {
+      const data = error.response.data;
+
+      updateState(sellerRegisterForm, {
+        formState: {
+          ...sellerRegisterForm.value.formState,
+          formAlert: {
+            variant: "error",
+            text: data.message,
+            isOpen: true,
+          }
+        }
+      });
     }
-
-    updateState(sellerFormAlert, { isOpen: false });
-    setCurrentStep(2);
   }
 
   const register = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
     if (sellerRegisterForm.value.data.password.length < 6) {
-      updateState(sellerFormAlert, { text: "Password must be atleast 6 characters." });
-      updateState(sellerFormAlert, { severity: "error" });
-      updateState(sellerFormAlert, { isOpen: true });
+      updateState(sellerRegisterForm, {
+        formState: {
+          ...sellerRegisterForm.value.formState,
+          formAlert: {
+            variant: "error",
+            text: "Password must be atleast 6 characters.",
+            isOpen: true,
+          }
+        }
+      });
+
       return;
     }
 
     if (sellerRegisterForm.value.data.password != sellerRegisterForm.value.data.cPassword) {
-      updateState(sellerFormAlert, { text: "Password didn't match." });
-      updateState(sellerFormAlert, { severity: "error" });
-      updateState(sellerFormAlert, { isOpen: true });
+      updateState(sellerRegisterForm, {
+        formState: {
+          ...sellerRegisterForm.value.formState,
+          formAlert: {
+            variant: "error",
+            text: "Password didn't match.",
+            isOpen: true,
+          }
+        }
+      });
+
       return;
     }
 
@@ -51,26 +114,37 @@ const SellerRegisterForm = () => {
         payload: { data: (({ cPassword, ...rest }) => rest)(sellerRegisterForm.value.data) },
       });
 
-      updateState(sellerFormAlert, { text: "Account registration success." });
-      updateState(sellerFormAlert, { severity: "success" });
-      updateState(sellerFormAlert, { isOpen: true });
-      router.push("/seller");
-    } catch (error: any) {
-      if (error.response?.status === 500) {
-        updateState(sellerFormAlert, { text: "Internal server error." });
-        updateState(sellerFormAlert, { severity: "error" });
-        updateState(sellerFormAlert, { isOpen: true });
-        return;
-      }
+      updateState(sellerRegisterForm, {
+        formState: {
+          ...sellerRegisterForm.value.formState,
+          formAlert: {
+            variant: "success",
+            text: "Account registration success.",
+            isOpen: true,
+          }
+        }
+      });
 
-      if (error.response?.status === 400) {
-        updateState(sellerFormAlert, { text: "Invalid details for registration." });
-        updateState(sellerFormAlert, { severity: "error" });
-        updateState(sellerFormAlert, { isOpen: true });
-        return;
-      }
+      setCurrentStep(0);
+    } catch (error: any) {
+      const data = error.response.data;
+
+      updateState(sellerRegisterForm, {
+        formState: {
+          ...sellerRegisterForm.value.formState,
+          formAlert: {
+            variant: "error",
+            text: data.message,
+            isOpen: true,
+          }
+        }
+      });
     }
   };
+
+  useEffect(() => {
+    resetSellerRegisterForm();
+  }, []);
 
   return (
     <form className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm" onSubmit={(e) => register(e)}>
@@ -78,15 +152,30 @@ const SellerRegisterForm = () => {
         <div className="font-bold text-2xl text-center">
           REGISTER AS SELLER
         </div>
-        <div className={sellerFormAlert.value.isOpen ? "block" : "hidden"}>
+        <div className={sellerRegisterForm.value.formState.formAlert.isOpen ? "block" : "hidden"}>
           <Alert
             variant="outlined"
-            severity={sellerFormAlert.value.severity}
+            severity={sellerRegisterForm.value.formState.formAlert.variant}
             >
-            {sellerFormAlert.value.text}
+            {sellerRegisterForm.value.formState.formAlert.text}
           </Alert>
         </div>
       </div>
+      {currentStep === 0 ? (
+        <>
+          <div className="flex flex-row-reverse gap-2">
+            <Button
+              className="flex-1"
+              size="large"
+              variant="contained"
+              color="info"
+              onClick={() => router.push("/seller")}
+            >
+              Log-In
+            </Button>
+          </div>
+        </>
+      ) : null}
       {currentStep === 1 ? (
         <>
           <div className="flex flex-col gap-2">
@@ -94,6 +183,11 @@ const SellerRegisterForm = () => {
               label="Create username"
               value={sellerRegisterForm.value.data.username}
               required
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, username: e.target.value },
@@ -113,7 +207,6 @@ const SellerRegisterForm = () => {
             </Button>
             <Button
               className="flex-1"
-              type="submit"
               size="large"
               variant="contained"
               color="info"
@@ -123,7 +216,8 @@ const SellerRegisterForm = () => {
             </Button>
           </div>
         </>
-      ) : (
+      ) : null}
+      {currentStep === 2 ? (
         <>
           <div className="flex flex-col gap-2">
             <TextField
@@ -140,6 +234,11 @@ const SellerRegisterForm = () => {
               type="password"
               value={sellerRegisterForm.value.data.password}
               required
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, password: e.target.value },
@@ -151,6 +250,11 @@ const SellerRegisterForm = () => {
               type="password"
               value={sellerRegisterForm.value.data.cPassword}
               required
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, cPassword: e.target.value },
@@ -164,6 +268,11 @@ const SellerRegisterForm = () => {
               label="Last Name"
               value={sellerRegisterForm.value.data.lastName}
               required
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, lastName: e.target.value },
@@ -174,6 +283,11 @@ const SellerRegisterForm = () => {
               label="First Name"
               value={sellerRegisterForm.value.data.firstName}
               required
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, firstName: e.target.value },
@@ -183,6 +297,11 @@ const SellerRegisterForm = () => {
             <TextField
               label="Middle Name (optional)"
               value={sellerRegisterForm.value.data.middleName}
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, middleName: e.target.value },
@@ -192,6 +311,11 @@ const SellerRegisterForm = () => {
             <TextField
               label="Suffix (optional)"
               value={sellerRegisterForm.value.data.suffix}
+              slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
+              }}
               onChange={(e) => {
                 updateState(sellerRegisterForm, {
                   data: { ...sellerRegisterForm.value.data, suffix: e.target.value },
@@ -205,6 +329,11 @@ const SellerRegisterForm = () => {
                 value={sellerRegisterForm.value.data.gender}
                 label="Gender"
                 required
+                slotProps={{
+                  input: {
+                    readOnly: sellerRegisterForm.value.formState.loading,
+                  },
+                }}
                 onChange={(e) => {
                   updateState(sellerRegisterForm, {
                     data: { ...sellerRegisterForm.value.data, gender: e.target.value },
@@ -226,6 +355,9 @@ const SellerRegisterForm = () => {
                 });
               }}
               slotProps={{
+                input: {
+                  readOnly: sellerRegisterForm.value.formState.loading,
+                },
                 inputLabel: {
                   shrink: true,
                 },
@@ -233,28 +365,35 @@ const SellerRegisterForm = () => {
             />
           </div>
           <div className="flex flex-row-reverse gap-2">
+            {sellerRegisterForm.value.formState.loading ? (
+              <div className="flex-1 flex flex-row justify-center items-center">
+                <CircularProgress enableTrackSlot size="30px" aria-label="Loading…" />
+              </div>
+            ) : (
+              <Button
+                className="flex-1"
+                type="submit"
+                size="large"
+                variant="contained"
+                color="success"
+                disabled={sellerRegisterForm.value.formState.loading}
+              >
+                Create Account
+              </Button>
+            )}
             <Button
               className="flex-1"
-              type="submit"
-              size="large"
-              variant="contained"
-              color="success"
-            >
-              Create Account
-            </Button>
-            <Button
-              className="flex-1"
-              type="submit"
               size="large"
               variant="contained"
               color="info"
+              disabled={sellerRegisterForm.value.formState.loading}
               onClick={() => router.push("/seller")}
             >
               Log-In Instead
             </Button>
           </div>
         </>
-      )}
+      ) : null}
     </form>
   );
 };
