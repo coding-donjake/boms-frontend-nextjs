@@ -163,15 +163,14 @@ const SellerRegisterForm = () => {
       </div>
       {currentStep === 0 ? (
         <>
-          <div className="flex flex-row-reverse gap-2">
+          <div className="flex flex-row justify-center">
             <Button
-              className="flex-1"
               size="large"
               variant="contained"
               color="info"
               onClick={() => router.push("/seller")}
             >
-              Log-In
+              Proceed To Log-In
             </Button>
           </div>
         </>

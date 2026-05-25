@@ -30,8 +30,6 @@ const SellerStoreList = () => {
           [attribute]: uploaded[0].url,
         }
       });
-
-      console.log("reached");
     } catch (error: any) {
       const data = error.response.data;
 
@@ -73,6 +71,11 @@ const SellerStoreList = () => {
             isOpen: true,
           }
         }
+      });
+
+      setModalState({
+        ...modalState,
+        step: 0,
       });
     } catch (error: any) {
       const data = error.response.data;
@@ -165,6 +168,26 @@ const SellerStoreList = () => {
               {sellerStoreCrud.value.formState.formAlert.text}
             </Alert>
           </div>
+          {modalState.step === 0
+            ? (
+              <>
+                <div className="flex flex-row justify-center">
+                  <Button
+                    size="large"
+                    variant="contained"
+                    color="info"
+                    onClick={() => setModalState({
+                      ...modalState,
+                      open: false,
+                    })}
+                  >
+                    Close
+                  </Button>
+                </div>
+              </>
+            )
+            : null
+          }
           {modalState.step === 1
             ? (
               <>
