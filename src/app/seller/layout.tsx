@@ -1,4 +1,5 @@
 import type { Metadata } from "next";
+import SellerAuthWrapper from "@/components/seller/widgets/SellerAuthWrapper";
 
 export const metadata: Metadata = {
   title: "Seller Portal- Register",
@@ -10,7 +11,11 @@ const layout = ({
 }: Readonly<{
   children: React.ReactNode;
 }>) => {
-  return children;;
+  return (
+    <SellerAuthWrapper>
+      {children}
+    </SellerAuthWrapper>
+  );
 }
 
 export default layout;

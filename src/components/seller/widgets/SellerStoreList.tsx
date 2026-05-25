@@ -1,7 +1,7 @@
 import { Add } from "@mui/icons-material";
 import CloudUploadIcon from '@mui/icons-material/CloudUpload';
 import CancelIcon from '@mui/icons-material/Cancel';
-import { Button, Modal, TextField } from "@mui/material";
+import { Alert, Button, Modal, TextField } from "@mui/material";
 import { useState } from "react";
 import { resetSellerCrud, sellerStoreCrud } from "../store";
 import { updateState, uploadFiles } from "@/lib/utils";
@@ -12,7 +12,11 @@ import businessSiteApis from "../business-site-api";
 const SellerStoreList = () => {
   useSignals();
 
-  const [modalOpen, setModalOpen] = useState<boolean>(false);
+  const [modalState, setModalState] = useState({
+    open: false,
+    title: "",
+    step: 1,
+  });
 
   const uploadImage = async (files: FileList | null, attribute: string) => {
     try {
@@ -47,6 +51,8 @@ const SellerStoreList = () => {
   const createStore = async (event: React.SubmitEvent<HTMLFormElement>) => {
     event.preventDefault();
 
+    if (sellerStoreCrud.value.formState.loading) return;
+
     updateState(sellerStoreCrud, {
       formState: { ...sellerStoreCrud.value.formState, loading: true }
     });
@@ -58,8 +64,16 @@ const SellerStoreList = () => {
         config: { withCredentials: true },
       });
 
-      // resetSellerCrud();
-      console.log(result);
+      updateState(sellerStoreCrud, {
+        formState: {
+          ...sellerStoreCrud.value.formState,
+          formAlert: {
+            variant: "success",
+            text: "Store added successfully.",
+            isOpen: true,
+          }
+        }
+      });
     } catch (error: any) {
       const data = error.response.data;
 
@@ -72,6 +86,10 @@ const SellerStoreList = () => {
             isOpen: true,
           }
         }
+      });
+
+      updateState(sellerStoreCrud, {
+        formState: { ...sellerStoreCrud.value.formState, loading: false }
       });
     }
   }
@@ -98,7 +116,12 @@ const SellerStoreList = () => {
             variant="contained"
             color="info"
             onClick={() => {
-              setModalOpen(true);
+              setModalState({
+                ...modalState,
+                open: true,
+                title: "Add New Store",
+                step: 1,
+              });
               resetSellerCrud();
             }}
           >
@@ -110,125 +133,150 @@ const SellerStoreList = () => {
       <hr />
       <Modal
         className="flex flex-col justify-center items-center"
-        open={modalOpen}
+        open={modalState.open}
       >
         <form
           className="bg-white flex flex-col gap-4 w-md p-4 rounded-md shadow-sm"
           onSubmit={(e) => createStore(e)}
         >
-
           <div className="relative">
-            <div className="font-medium text-lg text-center">Add New Store</div>
+            <div className="font-medium text-lg text-center">{modalState.title}</div>
             <div className="absolute top-0 right-0">
               <div className="flex flex-row gap-2">
-                <CancelIcon className="cursor-pointer" color="error" onClick={() => setModalOpen(false)} />
-              </div>
-            </div>
-          </div>
-          <div className="relative w-full pb-16">
-            <div className="h-48 w-full overflow-hidden rounded-md">
-              <img
-                src={
-                  sellerStoreCrud.value.data.bannerImage
-                  ? `${process.env.NEXT_PUBLIC_API_URL}${sellerStoreCrud.value.data.bannerImage}`
-                  : "https://placehold.co/1200x400?text=Banner&font=roboto&bg=E5E7EB&fc=6B7280"
-                }
-                alt="Banner"
-                className="h-full w-full object-cover"
-              />
-            </div>
-            <div className="absolute left-1/2 top-48 -translate-x-1/2 -translate-y-1/2">
-              <div className="h-32 w-32 rounded-full border-4 border-white bg-gray-500 overflow-hidden shadow-md">
-                <img
-                  src={
-                    sellerStoreCrud.value.data.profileImage
-                    ? `${process.env.NEXT_PUBLIC_API_URL}${sellerStoreCrud.value.data.profileImage}`
-                    : "https://placehold.co/256x256?text=profile&font=roboto&bg=E5E7EB&fc=6B7280"
-                  }
-                  alt="Profile"
-                  className="h-full w-full object-cover"
+                <CancelIcon
+                  className="cursor-pointer"
+                  color={sellerStoreCrud.value.formState.loading ? "disabled" : "error"}
+                  onClick={() => {
+                    if (sellerStoreCrud.value.formState.loading) return;
+                    setModalState({
+                      ...modalState,
+                      open: false,
+                    });
+                  }}
                 />
               </div>
             </div>
           </div>
-          <div className="flex flex-row gap-2">
-            <Button
-              className="flex-1"
-              component="label"
-              role={undefined}
-              size="large"
-              variant="contained"
-              tabIndex={-1}
-              startIcon={<CloudUploadIcon />}
-            >
-              Upload Profile
-              <VisuallyHiddenInput
-                type="file"
-                onChange={(e) => uploadImage(e.target.files, "profileImage")}
-              />
-            </Button>
-            <Button
-              className="flex-1"
-              component="label"
-              role={undefined}
-              size="large"
-              variant="contained"
-              tabIndex={-1}
-              startIcon={<CloudUploadIcon />}
-            >
-              Upload Banner
-              <VisuallyHiddenInput
-                type="file"
-                onChange={(e) => uploadImage(e.target.files, "bannerImage")}
-              />
-            </Button>
+          <div className={sellerStoreCrud.value.formState.formAlert.isOpen ? "block" : "hidden"}>
+            <Alert
+              variant="outlined"
+              severity={sellerStoreCrud.value.formState.formAlert.variant}
+              >
+              {sellerStoreCrud.value.formState.formAlert.text}
+            </Alert>
           </div>
-          <div className="flex flex-col gap-2">
-            <TextField
-              label="Name"
-              value={sellerStoreCrud.value.data.name}
-              required
-              slotProps={{
-                input: {
-                  readOnly: sellerStoreCrud.value.formState.loading,
-                },
-              }}
-              onChange={(e) => {
-                updateState(sellerStoreCrud, {
-                  data: { ...sellerStoreCrud.value.data, name: e.target.value },
-                });
-              }}
-            />
-            <TextField
-              label="Description"
-              value={sellerStoreCrud.value.data.description}
-              multiline
-              minRows={4}
-              maxRows={4}
-              required
-              slotProps={{
-                input: {
-                  readOnly: sellerStoreCrud.value.formState.loading,
-                },
-              }}
-              onChange={(e) => {
-                updateState(sellerStoreCrud, {
-                  data: { ...sellerStoreCrud.value.data, description: e.target.value },
-                });
-              }}
-            />
-          </div>
-          <div className="flex flex-row justify-center">
-            <Button
-              type="submit"
-              size="large"
-              variant="contained"
-              color="success"
-              disabled={sellerStoreCrud.value.formState.loading}
-            >
-              Add Store
-            </Button>
-          </div>
+          {modalState.step === 1
+            ? (
+              <>
+                <div className="relative w-full pb-16">
+                  <div className="h-48 w-full overflow-hidden rounded-md">
+                    <img
+                      src={
+                        sellerStoreCrud.value.data.bannerImage
+                        ? `${process.env.NEXT_PUBLIC_API_URL}${sellerStoreCrud.value.data.bannerImage}`
+                        : "https://placehold.co/1200x400?text=BANNER&font=roboto&bg=E5E7EB&fc=6B7280"
+                      }
+                      alt="Banner"
+                      className="h-full w-full object-cover"
+                    />
+                  </div>
+                  <div className="absolute left-1/2 top-48 -translate-x-1/2 -translate-y-1/2">
+                    <div className="h-32 w-32 rounded-full border-4 border-white bg-gray-500 overflow-hidden shadow-md">
+                      <img
+                        src={
+                          sellerStoreCrud.value.data.profileImage
+                          ? `${process.env.NEXT_PUBLIC_API_URL}${sellerStoreCrud.value.data.profileImage}`
+                          : "https://placehold.co/256x256?text=PROFILE&font=roboto&bg=E5E7EB&fc=6B7280"
+                        }
+                        alt="Profile"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  </div>
+                </div>
+                <div className="flex flex-row gap-2">
+                  <Button
+                    className="flex-1"
+                    component="label"
+                    role={undefined}
+                    size="large"
+                    variant="contained"
+                    tabIndex={-1}
+                    startIcon={<CloudUploadIcon />}
+                    disabled={sellerStoreCrud.value.formState.loading}
+                  >
+                    Upload Profile
+                    <VisuallyHiddenInput
+                      type="file"
+                      onChange={(e) => uploadImage(e.target.files, "profileImage")}
+                    />
+                  </Button>
+                  <Button
+                    className="flex-1"
+                    component="label"
+                    role={undefined}
+                    size="large"
+                    variant="contained"
+                    tabIndex={-1}
+                    startIcon={<CloudUploadIcon />}
+                    disabled={sellerStoreCrud.value.formState.loading}
+                  >
+                    Upload Banner
+                    <VisuallyHiddenInput
+                      type="file"
+                      onChange={(e) => uploadImage(e.target.files, "bannerImage")}
+                    />
+                  </Button>
+                </div>
+                <div className="flex flex-col gap-2">
+                  <TextField
+                    label="Name"
+                    value={sellerStoreCrud.value.data.name}
+                    required
+                    slotProps={{
+                      input: {
+                        readOnly: sellerStoreCrud.value.formState.loading,
+                      },
+                    }}
+                    onChange={(e) => {
+                      updateState(sellerStoreCrud, {
+                        data: { ...sellerStoreCrud.value.data, name: e.target.value },
+                      });
+                    }}
+                  />
+                  <TextField
+                    label="Description"
+                    value={sellerStoreCrud.value.data.description}
+                    multiline
+                    minRows={4}
+                    maxRows={4}
+                    required
+                    slotProps={{
+                      input: {
+                        readOnly: sellerStoreCrud.value.formState.loading,
+                      },
+                    }}
+                    onChange={(e) => {
+                      updateState(sellerStoreCrud, {
+                        data: { ...sellerStoreCrud.value.data, description: e.target.value },
+                      });
+                    }}
+                  />
+                </div>
+                <div className="flex flex-row justify-center">
+                  <Button
+                    type="submit"
+                    size="large"
+                    variant="contained"
+                    color="success"
+                  >
+                    {sellerStoreCrud.value.formState.loading ? "Processing..." : "Add Store"}
+                  </Button>
+                </div>
+              </>
+            )
+            : null
+          }
         </form>
       </Modal>
     </div>
